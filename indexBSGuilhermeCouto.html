@@ -68,8 +68,9 @@
 
         function ValidationNome(params) {
             const tentativa = 0
-            if (nome < 4) {
+            if (nome.lenght < 5) {
                 alert("Nome Inválido!!")
+                tentativa =+1
                 if (tentativa > 3) {
                     
                 }
