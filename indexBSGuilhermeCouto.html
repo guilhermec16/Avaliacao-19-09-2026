@@ -1,102 +1,173 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<html lang="pt-BR">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banco SENAI - Simulador de Empréstimo</title>
+    <title>Atividade</title>
 </head>
-
+ 
 <body>
-
+ 
     <div class="container" id="appContainer">
-        <h2>Simulador de Empréstimo - Banco SENAI</h2>
-
+        <h2>Empréstimo</h2>
+ 
         <form id="loanForm">
             <div class="form-group">
-                <label for="clientName">Nome Completo (Mín. 5 caracteres):</label>
+                <label for="clientName">Nome Completo (min. 5 caracteres):</label>
                 <input type="text" id="clientName" required>
             </div>
-
+ 
             <div class="form-group">
-                <label for="birthDate">Data de Nascimento:</label>
+                <label for="birthDate">Data de Nascimento: <span id="idadeFracionada" class="idade-label"></span></label>
                 <input type="date" id="birthDate" required>
             </div>
-
+ 
             <div class="form-group">
                 <label for="clientCPF">CPF (Apenas 11 números):</label>
                 <input type="text" id="clientCPF" required>
-
             </div>
-
+ 
             <div class="form-group">
                 <label for="loanAmount">Valor do Empréstimo (R$):</label>
                 <input type="number" id="loanAmount" step="0.01" required>
+                <p class="field-error" id="loanAmountMsg"></p>
             </div>
-
+ 
             <div class="form-group">
                 <label for="interestRate">Taxa de Juros Simples (%):</label>
                 <input type="number" id="interestRate" step="0.1" required>
+                <p class="field-error" id="interestRateMsg"></p>
             </div>
-
+ 
             <div class="form-group">
                 <label for="installments">Quantidade de Parcelas:</label>
-                <input type="number" id="installments">
+                <input type="number" id="installments" required>
             </div>
-
-            <button type="submit" class="btn btn-primary" id="btnCalculate"
-                onclick="ValidationNome()">Calcular
-                Empréstimo</button>
+ 
+            <button type="submit" class="btn btn-primary" id="btnCalculate">Calcular Empréstimo</button>
+            <p id="feedbackMsg" style="color: #c62828; text-align: center; margin-top: 10px;"></p>
         </form>
-
-        <div class="result-box" id="resultBox">
-            <h3>Resumo da Simulação</h3>
-            <p><strong>Idade Calculada:</strong> <span id="resAge"></span> anos</p>
-            <p><strong>Montante Total com Juros:</strong> R$ <span id="resTotalAmount"></span></p>
-
-
-
+ 
+        <div class="result-box" id="resultBox" style="display: none;">
+            <h3>Resultado da Simulação</h3>
+            <table id="parcelasTable">
+                <thead>
+                    <tr>
+                        <th>Parcela</th>
+                        <th>Valor</th>
+                        <th>Vencimento</th>
+                    </tr>
+                </thead>
+                <tbody id="parcelasTableBody"></tbody>
+            </table>
+ 
             <button class="btn btn-danger" id="btnReset" style="margin-top: 20px;">Nova Simulação</button>
         </div>
     </div>
-
+ 
     <script>
+ 
+        let tentativas = 0
+ 
+        const form = document.getElementById("loanForm")
+        const btnCalcular = document.getElementById("btnCalculate")
+        const msgErro = document.getElementById("feedbackMsg")
+ 
+        // quando sair do campo de nascimento mostra a idade com casas decimais
+        document.getElementById("birthDate").addEventListener("blur", function () {
+            if (!this.value) return
+            const nascimento = new Date(this.value)
+            const hoje = new Date()
+            const idade = (hoje - nascimento) / (1000 * 60 * 60 * 24 * 365.25)
+            document.getElementById("idadeFracionada").textContent = "(" + idade.toFixed(2) + " anos)"
+        })
+ 
+        document.getElementById("loanAmount").addEventListener("blur", function () {
+            const valor = parseFloat(this.value)
+            document.getElementById("loanAmountMsg").textContent = (valor > 0) ? "" : "Digite um valor maior que 0"
+        })
 
-        const nome = document.getElementById("clientName").value
-        const cpf = document.getElementById("clientCPF").value
-
-        function ValidationNome(params) {
-            const tentativa = 0
-            if (nome.lenght < 5) {
-                alert("Nome Inválido!!")
-                tentativa =+1
-                if (tentativa > 3) {
-                    
-                }
+        document.getElementById("interestRate").addEventListener("blur", function () {
+            const taxa = parseFloat(this.value)
+            document.getElementById("interestRateMsg").textContent = (taxa > 0) ? "" : "Digite uma taxa maior que 0"
+        })
+ 
+        form.addEventListener("submit", function (e) {
+            e.preventDefault()
+            msgErro.textContent = ""
+ 
+            if (tentativas >= 3) {
+                msgErro.textContent = "Limite de tentativas excedido!!"
+                return
             }
-        }
-
-        function ValidationCPF(params) {
-            if (cpf < 10) {
-                alert("CPF Inválido!!")
+ 
+            const nome = document.getElementById("clientName").value
+            const cpf = document.getElementById("clientCPF").value
+            const valor = parseFloat(document.getElementById("loanAmount").value)
+            const taxa = parseFloat(document.getElementById("interestRate").value)
+            const parcelas = parseInt(document.getElementById("installments").value)
+ 
+            if (nome.length < 5) {
+                tentativas++
+                msgErro.textContent = (tentativas >= 3) ? "Você atingiu o limite de 3 tentativas!!" : "Nome Inválido!!"
+                if (tentativas >= 3) btnCalcular.disabled = true
+                return
             }
-        }
-
-        // Todo o código JavaScript orientado a objetos deve ser implementado aqui ou em um arquivo separado.
-        // Lembre-se de criar classes para gerenciar o Cliente, a Simulação e os limites de tentativas (máx 3).
+ 
+            if (cpf.length != 11 || isNaN(cpf)) {
+                tentativas++
+                msgErro.textContent = (tentativas >= 3) ? "Você atingiu o limite de 3 tentativas!!" : "CPF Inválido!!"
+                if (tentativas >= 3) btnCalcular.disabled = true
+                return
+            }
+ 
+            if (!(valor > 0) || !(taxa > 0) || !(parcelas > 0)) {
+                msgErro.textContent = "Preencha valor, taxa e parcelas corretamente"
+                return
+            }
+ 
+            // juros simples aplicados no valor do empréstimo
+            const montante = valor + (valor * taxa / 100)
+            const valorParcela = montante / parcelas
+ 
+            // gera uma tabela com as parcelas, vencimento e valor
+            const tbody = document.getElementById("parcelasTableBody")
+            tbody.innerHTML = ""
+            for (let i = 1; i <= parcelas; i++) {
+                const vencimento = new Date()
+                vencimento.setDate(vencimento.getDate() + 30 * i)
+                tbody.innerHTML += "<tr><td>" + i + "</td><td>R$ " + valorParcela.toFixed(2) + "</td><td>" +
+                    vencimento.toLocaleDateString("pt-BR") + "</td></tr>"
+            }
+ 
+            document.getElementById("resultBox").style.display = "block"
+        })
+ 
+        // limpa tudo e volta pro início
+        document.getElementById("btnReset").addEventListener("click", function () {
+            form.reset()
+            document.getElementById("resultBox").style.display = "none"
+            document.getElementById("idadeFracionada").textContent = ""
+            document.getElementById("loanAmountMsg").textContent = ""
+            document.getElementById("interestRateMsg").textContent = ""
+            document.getElementById("parcelasTableBody").innerHTML = ""
+            msgErro.textContent = ""
+            tentativas = 0
+            btnCalcular.disabled = false
+        })
+ 
     </script>
-
+ 
     <style>
         * {
             font-family: Arial, sans-serif, cursive;
         }
-
+ 
         body {
             margin: 0;
             background-color: white;
         }
-
+ 
         .container {
             width: 500px;
             margin: 50px auto;
@@ -104,29 +175,41 @@
             padding: 25px;
             border-radius: 10px;
         }
-
+ 
         h2 {
             text-align: center;
             color: #1565c0;
         }
-
+ 
         .form-group {
             margin-bottom: 15px;
         }
-
+ 
         label {
             display: block;
             margin-bottom: 5px;
             color: black;
         }
-
+ 
+        .idade-label {
+            font-weight: normal;
+            color: #1565c0;
+            font-size: 0.85em;
+        }
+ 
+        .field-error {
+            color: #c62828;
+            font-size: 0.8em;
+            margin: 4px 0 0;
+        }
+ 
         input {
             width: 100%;
             padding: 10px;
             border: 1px solid black;
             border-radius: 5px;
         }
-
+ 
         button {
             width: 100%;
             padding: 10px;
@@ -136,13 +219,13 @@
             color: white;
             cursor: pointer;
         }
-
+ 
         button:hover {
             background-color: #0d47a1;
             transition: 1s;
             transform: translateY(-5px);
         }
-
+ 
         .result-box {
             margin-top: 20px;
             padding: 15px;
@@ -150,12 +233,25 @@
             border-radius: 5px;
             border: black solid 1px;
         }
-
+ 
         .result-box h3 {
             color: #1565c0;
         }
+ 
+        #parcelasTable {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+ 
+        #parcelasTable th,
+        #parcelasTable td {
+            border: 1px solid #ccc;
+            padding: 6px;
+            text-align: center;
+        }
     </style>
-
+ 
 </body>
-
+ 
 </html>
